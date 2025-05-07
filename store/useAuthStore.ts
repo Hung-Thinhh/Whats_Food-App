@@ -139,12 +139,8 @@ export const useAuthStore = create<AuthState>()(
               createdAt: new Date(),
             };
 
-            set({
-              user,
-              isAuthenticated: true,
-              isVerifying: false,
-              verificationId: null,
-            });
+           
+            
           }
 
           return isValid;
@@ -184,6 +180,14 @@ export const useAuthStore = create<AuthState>()(
         if (!login.payload.DT.access_token) {
           return false;
         }
+        set({
+          user: {
+            role: login.payload.DT.account.role,
+          },
+          isAuthenticated: true,
+          isVerifying: false,
+          verificationId: null,
+        }),
         await saveAccessToken(login.payload.DT.access_token);
         return true;
       },
@@ -202,6 +206,8 @@ export const useAuthStore = create<AuthState>()(
         await saveAccessToken(login.payload.DT.access_token);
         const user = {
           role: login.payload.DT.account.role,
+          phoneNumber: login.payload.DT.account.phone,
+          avatar: login.payload.DT.account.avatar,
         };
 
         set({

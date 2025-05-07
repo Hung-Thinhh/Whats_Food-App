@@ -65,6 +65,7 @@ function RootLayoutNav() {
       <Stack.Screen name="auth/verify" options={{ headerTitle: "Verification" }} />
       <Stack.Screen name="profile/edit" options={{ headerTitle: "Edit Profile" }} />
       <Stack.Screen name="auth/create-password" options={{ headerTitle: "Create Password" }} />
+      <Stack.Screen name="vouchers" options={{ headerTitle: "My Vouchers" }} />
       {/* G7FPQBG9Y97PPZTEWJ4LQHWM */}
     </Stack>
   );

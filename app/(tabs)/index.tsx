@@ -22,8 +22,18 @@ import {
 import colors from '@/constants/colors';
 import { getHomeData } from "@/api/home.api"; // đúng đường dẫn file api mới tạo
 import { HomeResType } from '@/schema/home.schema';
+import { useAppStore } from "@/store/useAppStore";
+import { getAccessToken } from "@/storange/auth.storage";
+
+// Remove this code that uses hooks outside of a component
+// const {
+//   getCartToServer
+// } = useAppStore();
+
 export default function HomeScreen() {
   const router = useRouter();
+  // Move the useAppStore hook inside the component
+  const { getCartToServer } = useAppStore();
   const [activeCategory, setActiveCategory] = useState('Nearby');
   
   const categoryTabs = ['Nearby', 'Top Sales', 'Rating'];
@@ -67,15 +77,28 @@ export default function HomeScreen() {
     async function fetchHome() {
       try {
         const data = await getHomeData();
-        console.log('Home data:', data);
+        // console.log('Home data:', data);
         
         setHomeData(data.DT);
       } catch (error) {
         console.error(error);
       }
     }
+    async function fetchCart() {
+      try {
+        const token = await getAccessToken();
+        console.log('Token:', token);
+        if(token){
+          const data = await getCartToServer();
+         
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
     fetchHome();
-  }, []);
+    fetchCart();
+  }, []); // Add getCartToServer to the dependency array
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />

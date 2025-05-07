@@ -95,6 +95,7 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  totalPrice: number;
   image?: string;
   options?: {
     name: string;
@@ -108,7 +109,65 @@ export interface CartItem {
 }
 
 export interface UserLocation {
+  id?: string;
+  label?: string;
   address: string;
   latitude?: number;
   longitude?: number;
+  isDefault?: boolean;
+}
+
+export interface User {
+  id: string;
+  phoneNumber: string;
+  name?: string;
+  email?: string;
+  avatar?: string;
+  createdAt: Date;
+  password?: string;
+}
+
+export interface Voucher {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  discountType: 'PERCENT' | 'FIXED' | 'SHIPPING';
+  discountValue: number;
+  minOrderValue: number;
+  maxDiscount?: number;
+  expiryDate: string;
+  isLimited: boolean;
+  usageLimit?: number;
+  usageCount?: number;
+  category: 'RESTAURANT' | 'SHIPPING' | 'PLATFORM' | 'PARTNER';
+  iconColor: string;
+  icon: string;
+  isAvailable: boolean;
+  unavailableReason?: string;
+}
+
+export interface DeliveryOption {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  estimatedTime: string;
+  isAvailable: boolean;
+}
+
+export interface TipOption {
+  id: string;
+  value: number;
+  label: string;
+}
+
+export interface CheckoutPreferences {
+  selectedVoucher?: Voucher | null;
+  tipAmount: number;
+  deliveryOption: string;
+  includeCutlery: boolean;
+  note: string;
+  selectedPaymentMethod: string;
+  selectedAddress: UserLocation;
 }

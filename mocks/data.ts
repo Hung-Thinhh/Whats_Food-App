@@ -244,3 +244,155 @@ export const restaurants: Restaurant[] = [
 ];
 
 export const defaultLocation: string = '384/B1 Đ. Trần Nam Phú, Phường An Khánh, Ninh Kiều, Cần Thơ';
+export const savedAddresses: UserLocation[] = [
+  {
+    id: '1',
+    label: 'Home',
+    address: '384/B1 Đ. Trần Nam Phú, Phường An Khánh, Ninh Kiều, Cần Thơ',
+    latitude: 10.0341,
+    longitude: 105.7882,
+    isDefault: true
+  },
+  {
+    id: '2',
+    label: 'Work',
+    address: '30 Nguyễn Văn Cừ, Phường An Hòa, Ninh Kiều, Cần Thơ',
+    latitude: 10.0312,
+    longitude: 105.7702,
+    isDefault: false
+  },
+  {
+    id: '3',
+    label: 'Gym',
+    address: '15 Đ. 3/2, Phường Xuân Khánh, Ninh Kiều, Cần Thơ',
+    latitude: 10.0298,
+    longitude: 105.7689,
+    isDefault: false
+  },
+];
+
+export const vouchers: Voucher[] = [
+  {
+    id: '1',
+    code: 'WELCOME15',
+    title: 'Code 15% off',
+    description: 'Get 15% off on your order',
+    discountType: 'PERCENT',
+    discountValue: 15,
+    minOrderValue: 45000,
+    maxDiscount: 10000,
+    expiryDate: '31.05.2025',
+    isLimited: true,
+    usageLimit: 5,
+    usageCount: 0,
+    category: 'PARTNER',
+    iconColor: '#FF5733',
+    icon: 'ticket',
+    isAvailable: true
+  },
+  {
+    id: '2',
+    code: 'FREESHIP50',
+    title: 'Code 50% off on shipping fee',
+    description: 'Get 50% off on shipping fee',
+    discountType: 'SHIPPING',
+    discountValue: 50,
+    minOrderValue: 0,
+    maxDiscount: 20000,
+    expiryDate: '31.05.2025',
+    isLimited: true,
+    category: 'SHIPPING',
+    iconColor: '#20B2AA',
+    icon: 'truck',
+    isAvailable: true
+  },
+  {
+    id: '3',
+    code: 'FREESHIP60',
+    title: 'Code 50% off on shipping fee',
+    description: 'Get 50% off on shipping fee',
+    discountType: 'SHIPPING',
+    discountValue: 50,
+    minOrderValue: 60000,
+    maxDiscount: 20000,
+    expiryDate: '31.05.2025',
+    isLimited: true,
+    usageLimit: 5,
+    usageCount: 0,
+    category: 'SHIPPING',
+    iconColor: '#20B2AA',
+    icon: 'truck',
+    isAvailable: true
+  },
+  {
+    id: '4',
+    code: 'SHINHAN50K',
+    title: 'Shinhan Finance 50.000đ off on total dish',
+    description: 'Get 50.000đ off on your total order',
+    discountType: 'FIXED',
+    discountValue: 50000,
+    minOrderValue: 100000,
+    expiryDate: '30.06.2025',
+    isLimited: false,
+    category: 'PLATFORM',
+    iconColor: '#4169E1',
+    icon: 'credit-card',
+    isAvailable: false,
+    unavailableReason: 'Min spend does not reach'
+  }
+];
+
+export const deliveryOptions: DeliveryOption[] = [
+  {
+    id: 'standard',
+    name: 'Standard',
+    description: 'Delivery within 30-45 minutes',
+    price: 15000,
+    estimatedTime: '30-45 min',
+    isAvailable: true
+  },
+  {
+    id: 'express',
+    name: 'Express',
+    description: 'Delivery within 15-25 minutes',
+    price: 25000,
+    estimatedTime: '15-25 min',
+    isAvailable: true
+  },
+  {
+    id: 'scheduled',
+    name: 'Scheduled',
+    description: 'Choose your delivery time',
+    price: 15000,
+    estimatedTime: 'You choose',
+    isAvailable: true
+  }
+];
+
+export const tipOptions: TipOption[] = [
+  {
+    id: 'none',
+    value: 0,
+    label: 'None'
+  },
+  {
+    id: '5k',
+    value: 5000,
+    label: '5K'
+  },
+  {
+    id: '10k',
+    value: 10000,
+    label: '10K'
+  },
+  {
+    id: '15k',
+    value: 15000,
+    label: '15K'
+  },
+  {
+    id: 'other',
+    value: 0,
+    label: 'Other'
+  }
+];
