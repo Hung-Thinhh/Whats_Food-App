@@ -9,7 +9,6 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   Alert,
-  Modal,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,24 +20,15 @@ import {
   Share2,
   ChevronLeft,
   Search,
-  Plus,
-  Minus,
-  Check,
-  X,
 } from "lucide-react-native";
-import { restaurants } from "@/mocks/data";
 import { useAppStore } from "@/store/useAppStore";
-import { MenuItem, MenuItemOption, CartItem } from "@/types";
+import { MenuItem } from "@/types";
 import colors from "@/constants/colors";
 import RestaurantApiRequest from "@/api/restaurant";
 import { RestaurantData } from "@/schema/restaurant.schema";
 import { AddCartBodyType } from "@/schema/cart.schema";
-
-const mockMenuCategories = ["Popular", "Drinks", "Food", "Snacks", "Desserts"];
-
-// Expanded menu items with categories
-
-// Group menu items by category
+import ItemModal from "@/components/ItemModal"; // Import component mới
+import CartModal from "@/components/CartModal"; // Import component mới
 
 export default function RestaurantScreen() {
   const { id } = useLocalSearchParams();
@@ -64,7 +54,6 @@ export default function RestaurantScreen() {
   >({});
   const [quantity, setQuantity] = useState(1);
 
-  // const restaurant = restaurants.find((r) => r.id === '5');
   const isFavorite = favorites.includes(id as string);
 
   // Refs for scroll handling
@@ -131,6 +120,7 @@ export default function RestaurantScreen() {
       return acc;
     }, {} as Record<string, MenuItem[]>);
   }, [menu]);
+
   useEffect(() => {
     async function fetchRestaurant() {
       try {
@@ -144,9 +134,11 @@ export default function RestaurantScreen() {
     }
     fetchRestaurant();
   }, []);
+
   useEffect(() => {
     console.log("menu", menu);
   }, [menu]);
+
   if (!restaurant) {
     return (
       <View style={styles.notFoundContainer}>
@@ -160,41 +152,38 @@ export default function RestaurantScreen() {
       </View>
     );
   }
+
   const handleIncreaseQuantity = (itemId: string, currentQuantity: number) => {
-    console.log('increase');
-    
-    updateCartItemQuantity(itemId, currentQuantity + 1, 'increase');
+    updateCartItemQuantity(itemId, currentQuantity + 1, "increase");
   };
 
   const handleDecreaseQuantity = (itemId: string, currentQuantity: number) => {
     if (currentQuantity > 1) {
-      updateCartItemQuantity(itemId, currentQuantity - 1,'decrease');
+      updateCartItemQuantity(itemId, currentQuantity - 1, "decrease");
     } else {
-      Alert.alert('Xóa món', 'Bạn có chắc muốn xóa món này khỏi giỏ hàng?', [
-        { text: 'Hủy', style: 'cancel' },
-        { text: 'Xóa', onPress: () => updateCartItemQuantity(itemId, currentQuantity - 1,'decrease'), style: 'destructive' },
+      Alert.alert("Xóa món", "Bạn có chắc muốn xóa món này khỏi giỏ hàng?", [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Xóa",
+          onPress: () =>
+            updateCartItemQuantity(itemId, currentQuantity - 1, "decrease"),
+          style: "destructive",
+        },
       ]);
     }
   };
-  const handleRemoveItem = (itemId: string) => {
-    Alert.alert('Xóa món', 'Bạn có chắc muốn xóa món này khỏi giỏ hàng?', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: 'Xóa', onPress: () => removeFromCart(itemId), style: 'destructive' },
-    ]);
-  };
+
   const handleFavoritePress = () => {
     toggleFavorite(id as string);
   };
 
   const handleSharePress = () => {
-    // Share functionality would go here
     console.log("Share restaurant:", restaurant.name);
   };
 
   const handleCategoryPress = (category: string) => {
     setActiveCategory(category);
 
-    // Scroll to the selected category section
     if (scrollViewRef.current && categoryRefs.current[category] !== undefined) {
       isScrolling.current = true;
       scrollViewRef.current.scrollTo({
@@ -202,7 +191,6 @@ export default function RestaurantScreen() {
         animated: true,
       });
 
-      // Reset the flag after animation completes
       setTimeout(() => {
         isScrolling.current = false;
       }, 500);
@@ -210,12 +198,10 @@ export default function RestaurantScreen() {
   };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    // Skip if we're programmatically scrolling
     if (isScrolling.current) return;
 
     const scrollY = event.nativeEvent.contentOffset.y;
 
-    // Find which category section is most visible
     let closestCategory = "Popular";
     let minDistance = Number.MAX_VALUE;
 
@@ -234,9 +220,6 @@ export default function RestaurantScreen() {
 
   const openItemModal = (item: MenuItem) => {
     setSelectedItem(item);
-    console.log("selected item", item);
-
-    // Initialize selected options with defaults
     const initialOptions: Record<string, string | string[]> = {};
     if (item.options) {
       item.options.forEach((option) => {
@@ -252,101 +235,14 @@ export default function RestaurantScreen() {
     setQuantity(1);
     setModalVisible(true);
   };
+
   const openCartModal = () => {
     setModalCartVisible(true);
   };
 
-  const handleOptionSelect = (optionId: string, choiceId: string) => {
-    setSelectedOptions((prev) => {
-      const option = selectedItem?.options?.find((o) => o.id === optionId);
-
-      if (option?.multiple) {
-        const currentSelections = (prev[optionId] as string[]) || [];
-        if (currentSelections.includes(choiceId)) {
-          return {
-            ...prev,
-            [optionId]: currentSelections.filter((id) => id !== choiceId),
-          };
-        } else {
-          return {
-            ...prev,
-            [optionId]: [...currentSelections, choiceId],
-          };
-        }
-      } else {
-        return {
-          ...prev,
-          [optionId]: choiceId,
-        };
-      }
-    });
-  };
-
-  const isOptionSelected = (optionId: string, choiceId: string) => {
-    const selection = selectedOptions[optionId];
-    if (Array.isArray(selection)) {
-      return selection.includes(choiceId);
-    }
-    return selection === choiceId;
-  };
-
-  const canAddToCart = () => {
-    if (!selectedItem) return false;
-
-    // Check if all required options are selected
-    if (selectedItem.options) {
-      for (const option of selectedItem.options) {
-        if (option.required) {
-          const selection = selectedOptions[option.id];
-          if (
-            !selection ||
-            (Array.isArray(selection) && selection.length === 0)
-          ) {
-            return false;
-          }
-        }
-      }
-    }
-
-    return true;
-  };
-
-  const calculateItemPrice = () => {
-    if (!selectedItem) return 0;
-
-    let totalPrice = selectedItem.price;
-
-    // Add price for selected options
-    if (selectedItem.options) {
-      selectedItem.options.forEach((option) => {
-        if (option.multiple) {
-          const selectedChoices =
-            (selectedOptions[option.id] as string[]) || [];
-          selectedChoices.forEach((choiceId) => {
-            const choice = option.choices.find((c) => c.id === choiceId);
-            if (choice && choice.price) {
-              totalPrice += choice.price;
-            }
-          });
-        } else {
-          const choiceId = selectedOptions[option.id] as string;
-          if (choiceId) {
-            const choice = option.choices.find((c) => c.id === choiceId);
-            if (choice && choice.price) {
-              totalPrice += choice.price;
-            }
-          }
-        }
-      });
-    }
-
-    return totalPrice * quantity;
-  };
-
   const handleAddToCart = () => {
-    if (!selectedItem || !canAddToCart()) return;
+    if (!selectedItem) return;
 
-    // Check if adding from a different restaurant
     if (cartRestaurantId && cartRestaurantId !== restaurant._id) {
       Alert.alert(
         "Replace Cart Items?",
@@ -370,7 +266,6 @@ export default function RestaurantScreen() {
   const addItemToCart = () => {
     if (!selectedItem) return;
 
-    // Format selected options for cart (the new format)
     const formattedOptions = [];
 
     if (selectedItem.options) {
@@ -408,7 +303,6 @@ export default function RestaurantScreen() {
       }
     }
 
-    // Create cart item
     const cartItem: AddCartBodyType = {
       restaurantId: restaurant._id,
       foodId: selectedItem.id,
@@ -427,258 +321,39 @@ export default function RestaurantScreen() {
     );
   };
 
-  const renderItemModal = () => {
-    if (!selectedItem) return null;
+  const calculateItemPrice = () => {
+    if (!selectedItem) return 0;
 
-    return (
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <X size={24} color={colors.text} />
-            </TouchableOpacity>
+    let totalPrice = selectedItem.price;
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Image
-                source={{ uri: selectedItem.image }}
-                style={styles.modalImage}
-              />
+    if (selectedItem.options) {
+      selectedItem.options.forEach((option) => {
+        if (option.multiple) {
+          const selectedChoices =
+            (selectedOptions[option.id] as string[]) || [];
+          selectedChoices.forEach((choiceId) => {
+            const choice = option.choices.find((c) => c.id === choiceId);
+            if (choice && choice.price) {
+              totalPrice += choice.price;
+            }
+          });
+        } else {
+          const choiceId = selectedOptions[option.id] as string;
+          if (choiceId) {
+            const choice = option.choices.find((c) => c.id === choiceId);
+            if (choice && choice.price) {
+              totalPrice += choice.price;
+            }
+          }
+        }
+      });
+    }
 
-              <View style={styles.modalItemInfo}>
-                <Text style={styles.modalItemName}>{selectedItem.name}</Text>
-                <Text style={styles.modalItemDescription}>
-                  {selectedItem.description}
-                </Text>
-                <Text style={styles.modalItemPrice}>
-                  {selectedItem.price.toLocaleString("vi-VN")}đ
-                </Text>
-              </View>
-
-              {selectedItem.options &&
-                selectedItem.options.map((option) => (
-                  <View key={option.id} style={styles.optionSection}>
-                    <Text style={styles.optionTitle}>
-                      {option.name}{" "}
-                      {option.required && (
-                        <Text style={styles.requiredText}>*</Text>
-                      )}
-                    </Text>
-
-                    {option.choices.map((choice) => (
-                      <TouchableOpacity
-                        key={choice.id}
-                        style={[
-                          styles.choiceItem,
-                          isOptionSelected(option.id, choice.id) &&
-                            styles.selectedChoice,
-                        ]}
-                        onPress={() => handleOptionSelect(option.id, choice.id)}
-                      >
-                        <View style={styles.choiceContent}>
-                          <Text style={styles.choiceName}>{choice.name}</Text>
-                          {choice.price && choice.price > 0 && (
-                            <Text style={styles.choicePrice}>
-                              +{choice.price.toLocaleString("vi-VN")}đ
-                            </Text>
-                          )}
-                        </View>
-
-                        {isOptionSelected(option.id, choice.id) && (
-                          <View style={styles.checkIcon}>
-                            <Check size={16} color={colors.background} />
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                ))}
-
-              <View style={styles.quantitySection}>
-                <Text style={styles.quantityTitle}>Quantity</Text>
-                <View style={styles.quantityControls}>
-                  <TouchableOpacity
-                    style={[
-                      styles.quantityButton,
-                      quantity <= 1 && styles.disabledButton,
-                    ]}
-                    onPress={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                    disabled={quantity <= 1}
-                  >
-                    <Minus
-                      size={20}
-                      color={quantity <= 1 ? colors.lightText : colors.text}
-                    />
-                  </TouchableOpacity>
-
-                  <Text style={styles.quantityText}>{quantity}</Text>
-
-                  <TouchableOpacity
-                    style={styles.quantityButton}
-                    onPress={() => setQuantity((prev) => prev + 1)}
-                  >
-                    <Plus size={20} color={colors.text} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[
-                  styles.addToCartButton,
-                  !canAddToCart() && styles.disabledButton,
-                ]}
-                onPress={handleAddToCart}
-                disabled={!canAddToCart()}
-              >
-                <Text style={styles.addToCartText}>
-                  Add to Cart - {calculateItemPrice().toLocaleString("vi-VN")}đ
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    );
+    return totalPrice * quantity;
   };
-  const renderCartModal = () => {
-    if (!cartItemOfRes && !cartItemOfRes.items) return null;
 
-    const itemTotal = calculateItemPrice();
-
-    return (
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalCartVisible}
-        onRequestClose={() => setModalCartVisible(false)}
-      >
-        <View style={styles.modalCartContainer}>
-          <View style={styles.modalCartContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Giỏ hàng</Text>
-              <TouchableOpacity
-                style={styles.closeCartButton}
-                onPress={() => setModalCartVisible(false)}
-              >
-                <X size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalScrollContainer}>
-              {/* Restaurant name */}
-              <View style={styles.modalRestaurantInfo}>
-                <Text style={styles.modalRestaurantName}>
-                  {restaurant.name}
-                </Text>
-              </View>
-              <View>
-                {cartItemOfRes.items &&
-                  cartItemOfRes.items.map((selectedItem) => {
-                    return (
-                      <View>
-                        <View style={styles.modalCartItem}>
-                          <Image
-                            source={{ uri: selectedItem.foodId.image || "ok" }}
-                            style={styles.modalItemImage}
-                          />
-                          <View style={styles.modalItemDetails}>
-                            <Text style={styles.modalCartName}>
-                              {selectedItem.foodId.name}
-                            </Text>
-                            {selectedItem.topping &&
-                              selectedItem.topping.length > 0 && (
-                                <View style={styles.modalOptionsContainer}>
-                                  {selectedItem.topping.map((option, index) => {
-                                    // Get selected choices for this option
-
-                                    return (
-                                      <Text
-                                        key={index}
-                                        style={styles.modalOptionGroup}
-                                      >
-                                        {option.item
-                                          .map((choice) => choice.name)
-                                          .join(", ")}
-                                      </Text>
-                                    );
-                                  })}
-                                </View>
-                              )}
-                            <View style={styles.modalItemPriceRow}>
-                              <Text style={styles.modalCartPrice}>
-                                {selectedItem.price.toLocaleString("vi-VN")}đ
-                              </Text>
-                              <View style={styles.modalQuantityControls}>
-                                <TouchableOpacity
-                                  style={styles.modalQuantityButton}
-                                  onPress={() => handleDecreaseQuantity(selectedItem._id, selectedItem.quantity)}
-
-                                >
-                                  <Minus size={16} color={"#fff"} />
-                                </TouchableOpacity>
-                                <Text style={styles.modalQuantityText}>
-                                  {selectedItem.quantity}
-                                </Text>
-                                <TouchableOpacity
-                                  style={styles.modalQuantityButton}
-                                  onPress={() => handleIncreaseQuantity(selectedItem._id, selectedItem.quantity)}
-                                >
-                                  <Plus size={16} color={"#fff"} />
-                                </TouchableOpacity>
-                              </View>
-                            </View>
-                          </View>
-                        </View>
-
-                        {/* <View style={styles.modalNoteContainer}>
-                        <Text style={styles.modalNoteText}>Add note...</Text>
-                      </View> */}
-                      </View>
-                    );
-                  })}
-                {/* Selected item */}
-              </View>
-              {/* Price summary */}
-              <View style={styles.modalSummaryContainer}>
-                <View style={styles.modalSummaryRow}>
-                  <Text style={styles.modalSummaryLabel}>Total</Text>
-                  <Text style={styles.modalSummaryValue}>
-                    {cartItemOfRes.totalPrice.toLocaleString("vi-VN")}đ
-                  </Text>
-                </View>
-                <Text style={styles.modalPriceNote}>
-                Giá đã bao gồm thuế, nhưng không bao gồm phí vận chuyển và
-                các loại phí khác
-                </Text>
-              </View>
-            </ScrollView>
-
-            {/* Add to cart button */}
-            <View style={styles.modalCartFooter}>
-              <TouchableOpacity
-                style={[
-                  styles.modalAddButton
-                ]}
-                onPress={() => router.push("/checkout")}
-              >
-                <Text style={styles.modalAddButtonText}>
-                  Checkout
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    );
+  const handleViewDishDetails = (item: any) => {
+    router.push(`/dish/${item.id}`);
   };
 
   return (
@@ -732,14 +407,6 @@ export default function RestaurantScreen() {
         <View style={styles.contentContainer}>
           <View style={styles.restaurantInfo}>
             <Text style={styles.restaurantName}>{restaurant.name}</Text>
-
-            <View style={styles.tagsContainer}>
-              {/* {restaurant.tags.map((tag, index) => (
-                <View key={index} style={styles.tagBadge}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))} */}
-            </View>
 
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
@@ -827,7 +494,6 @@ export default function RestaurantScreen() {
                   <View
                     key={category}
                     onLayout={(event) => {
-                      // Store the y-position of each category section
                       categoryRefs.current[category] =
                         event.nativeEvent.layout.y;
                     }}
@@ -847,7 +513,7 @@ export default function RestaurantScreen() {
                         <TouchableOpacity
                           key={item.id}
                           style={styles.menuItem}
-                          // onPress={() => openItemModal(item)}
+                          onPress={() => handleViewDishDetails(item)}
                         >
                           <View style={styles.menuItemContent}>
                             <Image
@@ -904,20 +570,38 @@ export default function RestaurantScreen() {
                   {cartItemOfRes.items.length}
                 </Text>
               </View>
-              <Text style={styles.cartText}>View Cart</Text>
+              <Text style={styles.cartText}>Giỏ hàng</Text>
             </View>
 
             <TouchableOpacity
               style={styles.checkoutButton}
-              onPress={() => router.push("/checkout")}
+              onPress={() => router.push(`/checkout/${id}`)}
             >
-              <Text style={styles.checkoutButtonText}>Checkout</Text>
+              <Text style={styles.checkoutButtonText}>Thanh toán</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         )}
 
-      {renderItemModal()}
-      {renderCartModal()}
+      <ItemModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        selectedItem={selectedItem}
+        selectedOptions={selectedOptions}
+        setSelectedOptions={setSelectedOptions}
+        quantity={quantity}
+        setQuantity={setQuantity}
+        onAddToCart={handleAddToCart}
+      />
+
+      <CartModal
+        visible={modalCartVisible}
+        onClose={() => setModalCartVisible(false)}
+        cartItems={cartItemOfRes}
+        restaurantName={restaurant.name}
+        onCheckout={() => router.push(`/checkout/${id}`)}
+        onIncreaseQuantity={handleIncreaseQuantity}
+        onDecreaseQuantity={handleDecreaseQuantity}
+      />
     </SafeAreaView>
   );
 }
@@ -989,23 +673,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: colors.text,
     marginBottom: 8,
-  },
-  tagsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 12,
-  },
-  tagBadge: {
-    backgroundColor: "rgba(255, 75, 58, 0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  tagText: {
-    fontSize: 12,
-    color: colors.primary,
   },
   statsContainer: {
     flexDirection: "row",
@@ -1170,155 +837,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: colors.background,
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: "90%",
-  },
-  closeButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalImage: {
-    width: "100%",
-    height: 200,
-    resizeMode: "cover",
-  },
-  modalItemInfo: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  modalItemName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 8,
-  },
-  modalItemDescription: {
-    fontSize: 14,
-    color: colors.lightText,
-    marginBottom: 8,
-    lineHeight: 20,
-  },
-  modalItemPrice: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.primary,
-  },
-  optionSection: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 12,
-  },
-  requiredText: {
-    color: colors.error,
-  },
-  choiceItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  selectedChoice: {
-    borderColor: colors.primary,
-    backgroundColor: "rgba(255, 75, 58, 0.05)",
-  },
-  choiceContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  choiceName: {
-    fontSize: 14,
-    color: colors.text,
-    marginRight: 8,
-  },
-  choicePrice: {
-    fontSize: 14,
-    color: colors.primary,
-  },
-  checkIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  quantitySection: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  quantityTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 12,
-  },
-  quantityControls: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  quantityButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.border,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  disabledButton: {
-    backgroundColor: "#F5F5F5",
-    opacity: 0.7,
-  },
-  quantityText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.text,
-    marginHorizontal: 16,
-  },
-  modalFooter: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  addToCartButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  addToCartText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.background,
-  },
   btn_add: {
     width: 30,
     height: 30,
@@ -1329,190 +847,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 25,
     display: "flex",
-  },
-  // Add these styles to your StyleSheet
-  modalCartContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalCartContent: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxHeight: "90%",
-    paddingBottom: 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.text,
-  },
-  closeCartButton: {
-    padding: 4,
-  },
-  modalScrollContainer: {
-    maxHeight: "80%",
-  },
-  modalRestaurantInfo: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  modalRestaurantName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.text,
-  },
-  modalCartItem: {
-    flexDirection: "row",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  modalItemImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  modalItemDetails: {
-    flex: 1,
-  },
-  modalCartName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  modalCartDescription: {
-    fontSize: 12,
-    color: colors.lightText,
-    marginBottom: 8,
-  },
-  modalItemPriceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  modalCartPrice: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.primary,
-  },
-  modalQuantityControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.border,
-    // borderRadius: 4,
-    overflow: "hidden",
-  },
-  modalQuantityButton: {
-    width: 28,
-    height: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#ff532c",
-  },
-  modalQuantityText: {
-    width: 32,
-    textAlign: "center",
-    fontSize: 14,
-    fontWeight: "500",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: colors.text,
-    backgroundColor: "#fff",
-    padding:4,
-  },
-  modalOptionsContainer: {
-    // padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    marginBottom: 5,
-
-  },
-  modalOptionGroup: {
-    color: "#8c8c8c"
-  },
-  modalOptionTitle: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: colors.text,
-    marginBottom: 8,
-  },
-  modalSelectedChoice: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-  },
-  modalChoiceText: {
-    fontSize: 12,
-    color: colors.lightText,
-  },
-  modalChoicePrice: {
-    fontSize: 12,
-    color: colors.primary,
-  },
-  modalNoteContainer: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  modalNoteText: {
-    fontSize: 14,
-    color: colors.lightText,
-    fontStyle: "italic",
-  },
-  modalSummaryContainer: {
-    padding: 16,
-  },
-  modalSummaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  modalSummaryLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.text,
-  },
-  modalSummaryValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.primary,
-  },
-  modalPriceNote: {
-    fontSize: 12,
-    color: colors.lightText,
-    fontStyle: "italic",
-  },
-  modalCartFooter: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  modalAddButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  modalAddButtonDisabled: {
-    backgroundColor: colors.border,
-  },
-  modalAddButtonText: {
-    color: colors.background,
-    fontSize: 16,
-    fontWeight: "bold",
   },
 });

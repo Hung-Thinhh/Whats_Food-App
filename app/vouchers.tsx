@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -15,6 +15,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { vouchers } from '@/mocks/data';
 import { Voucher } from '@/types';
 import colors from '@/constants/colors';
+import VoucherApiRequest from '@/api/voucher.api';
 
 export default function VouchersScreen() {
   const router = useRouter();
@@ -22,19 +23,29 @@ export default function VouchersScreen() {
   
   const [activeTab, setActiveTab] = useState('available');
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [listVoucher, setListVoucher] = useState([]);
+  const [selectedVoucher, setSelectedVoucherLocal] = useState(null); // Add state for selected voucher
+
   const availableVouchers = getAvailableVouchers();
   const unavailableVouchers = getUnavailableVouchers();
   
   const filteredVouchers = activeTab === 'available' 
-    ? availableVouchers.filter(v => 
-        v.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        v.code.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : unavailableVouchers.filter(v => 
-        v.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        v.code.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  ? listVoucher.filter(v => 
+      v.code.toLowerCase().includes(searchQuery.toLowerCase())
+    ).sort((a, b) => {
+      // Sắp xếp voucher "shipping" lên trước
+      if (a.discountType === 'shipping' && b.discountType !== 'shipping') {
+        return -1; 
+      } else if (a.discountType !== 'shipping' && b.discountType === 'shipping') {
+        return 1;
+      } else {
+        // Nếu cả hai voucher cùng loại (shipping hoặc product), giữ nguyên thứ tự
+        return 0;
+      }
+    })
+  : unavailableVouchers.filter(v => 
+      v.code.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   
   const handleCopyCode = (code: string) => {
     // In a real app, this would copy to clipboard
@@ -42,38 +53,45 @@ export default function VouchersScreen() {
   };
   
   const handleSelectVoucher = (voucher: Voucher) => {
-    setSelectedVoucher(voucher);
+    setSelectedVoucherLocal(voucher); // Update local selected voucher state
+    setSelectedVoucher(voucher); // Update global selected voucher state
     router.back();
   };
   
   const renderVoucherItem = ({ item }: { item: Voucher }) => (
-    <View style={styles.voucherItem}>
+    <TouchableOpacity 
+      style={[
+        styles.voucherItem, 
+        selectedVoucher && selectedVoucher.code === item.code && styles.selectedVoucher
+      ]}
+      onPress={() => handleSelectVoucher(item)}
+    >
       <View 
         style={[
           styles.voucherIconContainer, 
-          { backgroundColor: item.iconColor }
+          { backgroundColor: item.discountType === 'shipping' ? colors.green : colors.secondary }
         ]}
       >
-        {item.category === 'SHIPPING' ? (
+        {item.discountType === 'shipping' ? (
           <Truck size={20} color="#fff" />
         ) : (
           <Ticket size={20} color="#fff" />
         )}
         <Text style={styles.voucherCategory}>
-          {item.category === 'SHIPPING' ? 'Free Shipping' : 'Partners'}
+          {item.discountType === 'shipping' ? 'Free Shipping' : 'Partners'}
         </Text>
       </View>
       
       <View style={styles.voucherContent}>
         <View style={styles.voucherTitleRow}>
-          <Text style={styles.voucherItemTitle}>{item.title}</Text>
+          <Text style={styles.voucherItemTitle}>{item.code}</Text>
           {item.usageLimit && (
-            <Text style={styles.voucherUsage}>x{item.usageLimit - (item.usageCount || 0)}</Text>
+            <Text style={styles.voucherUsage}>x{item.usageLimit - (item.usedCount || 0)}</Text>
           )}
         </View>
         
         <Text style={styles.voucherLimitedTag}>
-          {item.isLimited ? '[Limited Offer]' : ''}
+          {item.isActive ? '[Active]' : '[Inactive]'}
         </Text>
         
         <Text style={styles.voucherDescription}>
@@ -85,7 +103,7 @@ export default function VouchersScreen() {
         </Text>
         
         <Text style={styles.voucherValidity}>
-          Valid Till: {item.expiryDate}
+          Valid Till: {item.endDate}
         </Text>
         
         {activeTab === 'unavailable' && item.unavailableReason && (
@@ -104,6 +122,7 @@ export default function VouchersScreen() {
       
       <View style={styles.voucherActions}>
         {activeTab === 'available' ? (
+          // The radio button is no longer needed
           <TouchableOpacity 
             style={styles.radioButton}
             onPress={() => handleSelectVoucher(item)}
@@ -128,9 +147,21 @@ export default function VouchersScreen() {
           </View>
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
-  
+  useEffect(() => {
+    async function fetchRestaurant() {
+      try {
+        const { payload } = await VoucherApiRequest.get();
+        setListVoucher(payload.DT);
+        console.log(payload.DT);
+        
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    fetchRestaurant();
+  }, []);
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Stack.Screen
@@ -211,7 +242,7 @@ export default function VouchersScreen() {
       <FlatList
         data={filteredVouchers}
         renderItem={renderVoucherItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.code}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -317,6 +348,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 8,
     overflow: 'hidden',
+    padding: 12, // Add padding to the voucherItem
+  },
+  selectedVoucher: {
+    backgroundColor: '#f0f0f0', // Light gray background for selected voucher
   },
   voucherIconContainer: {
     width: 60,
@@ -395,24 +430,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioButton: {
-    padding: 8,
-  },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.primary,
-  },
+  // radioButton: {
+  //   padding: 8,
+  // },
+  // radioOuter: {
+  //   width: 20,
+  //   height: 20,
+  //   borderRadius: 10,
+  //   borderWidth: 1,
+  //   borderColor: colors.primary,
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  // },
+  // radioInner: {
+  //   width: 12,
+  //   height: 12,
+  //   borderRadius: 6,
+  //   backgroundColor: colors.primary,
+  // },
   copyButtonContainer: {
     alignItems: 'center',
   },
@@ -459,4 +494,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.background,
   },
+  green: {
+    backgroundColor: 'green',
+  }
 });

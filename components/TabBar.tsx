@@ -45,27 +45,11 @@ export default function TabBar({ activeTab }: TabBarProps) {
             { color: activeTab === 'orders' ? colors.tabBarActive : colors.tabBarInactive }
           ]}
         >
-          My Orders
+          Đơn hàng
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.tab}
-        onPress={() => router.push('/likes')}
-      >
-        <Heart 
-          size={24} 
-          color={activeTab === 'likes' ? colors.tabBarActive : colors.tabBarInactive} 
-        />
-        <Text 
-          style={[
-            styles.tabText, 
-            { color: activeTab === 'likes' ? colors.tabBarActive : colors.tabBarInactive }
-          ]}
-        >
-          Likes
-        </Text>
-      </TouchableOpacity>
+     
 
       <TouchableOpacity 
         style={styles.tab}
@@ -81,7 +65,7 @@ export default function TabBar({ activeTab }: TabBarProps) {
             { color: activeTab === 'notifications' ? colors.tabBarActive : colors.tabBarInactive }
           ]}
         >
-          Notifications
+          Thông báo
         </Text>
       </TouchableOpacity>
 
@@ -99,7 +83,7 @@ export default function TabBar({ activeTab }: TabBarProps) {
             { color: activeTab === 'profile' ? colors.tabBarActive : colors.tabBarInactive }
           ]}
         >
-          Me
+          Tôi
         </Text>
       </TouchableOpacity>
     </View>

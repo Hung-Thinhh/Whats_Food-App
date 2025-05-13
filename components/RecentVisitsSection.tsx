@@ -68,13 +68,13 @@ export default function RecentVisitsSection({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Recent Visits</Text>
+        <Text style={styles.title}>Xem gần đây</Text>
         
         <TouchableOpacity 
           style={styles.seeAllButton}
           onPress={onSeeAllPress}
         >
-          <Text style={styles.seeAllText}>See All</Text>
+          <Text style={styles.seeAllText}>Xem tất cả</Text>
           <ChevronRight size={16} color={colors.primary} />
         </TouchableOpacity>
       </View>

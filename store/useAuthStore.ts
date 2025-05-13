@@ -33,6 +33,8 @@ interface AuthState {
   setVerifying: (isVerifying: boolean) => void;
   setIsNewUser: (isNewUser: boolean) => void;
   setUser: (user: User) => void;
+ getUser: () => User | null;
+
   logout: () => void;
 
   // Mock verification (in a real app, this would be handled by a backend service)
@@ -59,6 +61,10 @@ export const useAuthStore = create<AuthState>()(
       phoneNumber: null,
       passwords: {},
 
+      getUser: () => {
+        return get().user;
+      },
+      
       setPhoneNumber: (phoneNumber) => set({ phoneNumber }),
 
       setVerificationId: (verificationId) => set({ verificationId }),

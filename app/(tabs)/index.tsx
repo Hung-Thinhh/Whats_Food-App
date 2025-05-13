@@ -33,10 +33,10 @@ import { getAccessToken } from "@/storange/auth.storage";
 export default function HomeScreen() {
   const router = useRouter();
   // Move the useAppStore hook inside the component
-  const { getCartToServer } = useAppStore();
+  const { getCartToServer,getSavedAddresses } = useAppStore();
   const [activeCategory, setActiveCategory] = useState('Nearby');
   
-  const categoryTabs = ['Nearby', 'Top Sales', 'Rating'];
+  const categoryTabs = ['Gần đây', 'Bán chạy', 'Đánh giá cao'];
 
   const handleAddressPress = () => {
     router.push('/location');
@@ -90,6 +90,9 @@ export default function HomeScreen() {
         console.log('Token:', token);
         if(token){
           const data = await getCartToServer();
+          const address = await getSavedAddresses();
+          console.log('lấy rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr');
+          
          
         }
       } catch (error) {
@@ -117,15 +120,15 @@ export default function HomeScreen() {
         />
         
         <DealsSection 
-          title="Collections" 
+          title="Bộ sưu tầm" 
           deals={deals} 
           onDealPress={handleDealPress}
         />
         
-        <FlashSaleSection 
+        {/* <FlashSaleSection 
           items={flashSaleItems} 
           onItemPress={handleFlashSaleItemPress}
-        />
+        /> */}
         
         <RecentVisitsSection 
           visits={recentVisits} 

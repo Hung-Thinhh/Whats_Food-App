@@ -14,27 +14,12 @@ import { MapPin, Search, Navigation, Plus, Map } from 'lucide-react-native';
 import { useAppStore } from '@/store/useAppStore';
 import colors from '@/constants/colors';
 
-const mockSavedAddresses = [
-  {
-    id: '1',
-    label: 'Home',
-    address: '384/B1 Đ. Trần Nam Phú, Phường An Khánh, Ninh Kiều, Cần Thơ',
-  },
-  {
-    id: '2',
-    label: 'Work',
-    address: '30 Nguyễn Văn Cừ, Phường An Hòa, Ninh Kiều, Cần Thơ',
-  },
-  {
-    id: '3',
-    label: 'Gym',
-    address: '15 Đ. 3/2, Phường Xuân Khánh, Ninh Kiều, Cần Thơ',
-  },
-];
+
 
 export default function LocationScreen() {
   const router = useRouter();
-  const { userLocation, setUserLocation } = useAppStore();
+  const { userLocation, setUserLocation,savedAddresses } = useAppStore();
+  console.log(savedAddresses);
   
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -43,18 +28,7 @@ export default function LocationScreen() {
     router.back();
   };
 
-  const handleCurrentLocation = async () => {
-    try {
-      // In a real app, this would use the device's location
-      // For now, we'll just set a default address
-      setUserLocation({ 
-        address: '384/B1 Đ. Trần Nam Phú, Phường An Khánh, Ninh Kiều, Cần Thơ' 
-      });
-      router.back();
-    } catch (error) {
-      console.error('Error getting current location:', error);
-    }
-  };
+  
 
   const handleOpenMap = () => {
     router.push('/map-location');
@@ -82,13 +56,16 @@ export default function LocationScreen() {
         />
       </View>
       
-      <TouchableOpacity 
-        style={styles.actionButton}
-        onPress={handleCurrentLocation}
-      >
-        <Navigation size={20} color={colors.primary} style={styles.actionIcon} />
-        <Text style={styles.actionText}>Use current location</Text>
-      </TouchableOpacity>
+      <View 
+              style={styles.addressItem}
+            >
+              <View style={styles.addressLabelContainer}>
+                <MapPin size={20} color={colors.primary} />
+                <Text style={styles.addressLabel}>Vị trí hiện tại</Text>
+              </View>
+              <Text style={styles.addressText}>{userLocation.address}</Text>
+              <Text style={styles.addressText}>{userLocation.name} | {userLocation.phoneNumber}</Text>
+            </View>
       
       {Platform.OS !== 'web' && (
         <TouchableOpacity 
@@ -104,7 +81,7 @@ export default function LocationScreen() {
         <Text style={styles.sectionTitle}>Saved Addresses</Text>
         
         <FlatList
-          data={mockSavedAddresses}
+          data={savedAddresses}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <TouchableOpacity 
@@ -113,13 +90,15 @@ export default function LocationScreen() {
             >
               <View style={styles.addressLabelContainer}>
                 <MapPin size={20} color={colors.primary} />
-                <Text style={styles.addressLabel}>{item.label}</Text>
+                <Text style={styles.addressLabel}>Địa chỉ</Text>
               </View>
               <Text style={styles.addressText}>{item.address}</Text>
             </TouchableOpacity>
           )}
           ListFooterComponent={
-            <TouchableOpacity style={styles.addAddressButton}>
+            <TouchableOpacity style={styles.addAddressButton}
+            onPress={() => router.push('/add-new-address')}
+            >
               <Plus size={20} color={colors.primary} />
               <Text style={styles.addAddressText}>Add a new address</Text>
             </TouchableOpacity>

@@ -17,6 +17,7 @@ export interface Restaurant {
   };
   preferred?: boolean;
   outlets?: number;
+  address?: string;
 }
 
 export interface Category {
@@ -95,16 +96,11 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
-  totalPrice: number;
   image?: string;
   options?: {
     name: string;
-    id: string;
-    choices: {
-      id: string;
-      name: string;
-      price?: number;
-    }[];
+    value: string;
+    price?: number;
   }[];
 }
 
@@ -125,6 +121,7 @@ export interface User {
   avatar?: string;
   createdAt: Date;
   password?: string;
+  isGroupLeader?: boolean;
 }
 
 export interface Voucher {
@@ -170,4 +167,51 @@ export interface CheckoutPreferences {
   note: string;
   selectedPaymentMethod: string;
   selectedAddress: UserLocation;
+}
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  quantity: number;
+  image: string;
+  isFlashSale?: boolean;
+  options?: {
+    name: string;
+    value: string;
+    price?: number;
+  }[];
+}
+
+export interface Order {
+  id: string;
+  user: User;
+  restaurant: {
+    id: string;
+    name: string;
+    image: string;
+    address: string;
+  };
+  items: OrderItem[];
+  deliveryAddress: {
+    address: string;
+    contactName: string;
+    contactPhone: string;
+  };
+  deliveryDistance: number;
+  deliveryFee: number;
+  platformFee: number;
+  subtotal: number;
+  discount: number;
+  total: number;
+  status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'DELIVERING' | 'COMPLETED' | 'CANCELLED';
+  paymentMethod: string;
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
+  orderTime: string;
+  deliveryTime?: string;
+  note?: string;
+  includeCutlery: boolean;
+  canRate: boolean;
+  isRated: boolean;
 }

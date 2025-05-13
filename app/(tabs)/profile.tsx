@@ -35,65 +35,47 @@ export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
 
   const menuItems = [
-    {
-      id: 'vouchers',
-      icon: Ticket,
-      title: 'My Vouchers',
-      route: '/vouchers',
-    },
-    {
-      id: 'coins',
-      icon: Coins,
-      title: 'My Shopee Coins',
-      subtitle: '200 Coins',
-      route: '/coins',
-    },
-    {
-      id: 'payment',
-      icon: CreditCard,
-      title: 'Payment',
-      route: '/payment-methods',
-    },
+    
     {
       id: 'address',
       icon: MapPin,
-      title: 'Address',
-      route: '/addresses',
+      title: 'Địa chỉ',
+      route: '/location',
     },
     {
       id: 'invite',
       icon: Users,
-      title: 'Invite Friends',
+      title: 'Mời bạn bè',
       route: '/invite',
     },
     {
       id: 'help',
       icon: HelpCircle,
-      title: 'Help Centre',
+      title: 'Trung tâm hõ trợ',
       route: '/help',
     },
     {
       id: 'shop',
       icon: Store,
-      title: 'For Shop Owners',
+      title: 'Dành cho chủ shop',
       route: '/shop-owners',
     },
     {
       id: 'policy',
       icon: FileText,
-      title: 'User Policy',
+      title: 'Chính sách bảo mật',
       route: '/policy',
     },
     {
       id: 'settings',
       icon: Settings,
-      title: 'Settings',
+      title: 'Cài đặt',
       route: '/settings',
     },
     {
-      id: 'about',
+      id: 'info',
       icon: Utensils,
-      title: 'About ShopeeFood',
+      title: 'Về chúng tôi',
       route: '/about',
     },
   ];
@@ -154,7 +136,7 @@ export default function ProfileScreen() {
                   onPress={handleEditProfile}
                 >
                   <Edit size={16} color={colors.background} />
-                  <Text style={styles.editButtonText}>Edit Profile</Text>
+                  <Text style={styles.editButtonText}>Chỉnh sửa hồ sơ</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -181,7 +163,7 @@ export default function ProfileScreen() {
           </View>
         </View>
         
-        {isAuthenticated && user && (
+        {/* {isAuthenticated && user && (
           <View style={styles.userInfoContainer}>
             <View style={styles.userInfoItem}>
               <Phone size={20} color={colors.primary} style={styles.userInfoIcon} />
@@ -195,7 +177,7 @@ export default function ProfileScreen() {
               </View>
             )}
           </View>
-        )}
+        )} */}
         
         <View style={styles.menuContainer}>
           {menuItems.map((item) => {
@@ -231,13 +213,13 @@ export default function ProfileScreen() {
             style={styles.logoutButton}
             onPress={handleLogoutPress}
           >
-            <Text style={styles.logoutText}>Log Out</Text>
+            <Text style={styles.logoutText}>Đăng xuất</Text>
           </TouchableOpacity>
         )}
         
         <Text style={styles.versionText}>
           Version 7.40.1{'\n'}
-          Foody Corporation
+          WhatsFood Corporation
         </Text>
       </ScrollView>
     </SafeAreaView>

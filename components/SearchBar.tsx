@@ -11,7 +11,7 @@ interface SearchBarProps {
 
 export default function SearchBar({ 
   onPress, 
-  placeholder = 'Search for restaurants, cuisines, dishes...',
+  placeholder = 'Món ngon húp lẹ...',
   editable = true
 }: SearchBarProps) {
   return (

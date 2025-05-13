@@ -34,28 +34,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name="orders"
         options={{
-          title: 'My Orders',
+          title: 'Đơn hàng',
           tabBarIcon: ({ color, size }) => <ClipboardList size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="likes"
-        options={{
-          title: 'Likes',
-          tabBarIcon: ({ color, size }) => <Heart size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: 'Notifications',
+          title: 'Thông báo',
           tabBarIcon: ({ color, size }) => <Bell size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Me',
+          title: 'Tôi',
           tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
         }}
       />

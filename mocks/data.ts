@@ -1,4 +1,4 @@
-import { Restaurant, Category, Deal, FlashSaleItem, Banner, RecentVisit } from '@/types';
+import { Restaurant, Category, Deal, FlashSaleItem, Banner, RecentVisit, Voucher, DeliveryOption, TipOption, UserLocation, Order } from '@/types';
 
 export const categories: Category[] = [
   {
@@ -170,6 +170,7 @@ export const restaurants: Restaurant[] = [
       menuValue: '1% off menu',
     },
     outlets: 2,
+    address: '192D đường 30/4, P. An Phú, Quận Ninh Kiều, Cần Thơ',
   },
   {
     id: '2',
@@ -186,6 +187,7 @@ export const restaurants: Restaurant[] = [
       type: 'CODE',
       value: 'Code 11% off',
     },
+    address: 'Số 401 Đường Nguyễn Văn Cừ, P. An Hòa, Quận Ninh Kiều, Cần Thơ',
   },
   {
     id: '3',
@@ -202,6 +204,7 @@ export const restaurants: Restaurant[] = [
       type: 'CODE',
       value: 'Code 15.000đ off',
     },
+    address: '123 Nguyễn Văn Cừ, P. An Khánh, Quận Ninh Kiều, Cần Thơ',
   },
   {
     id: '4',
@@ -221,6 +224,7 @@ export const restaurants: Restaurant[] = [
       value: 'Code 11% off',
     },
     outlets: 14,
+    address: '160B Đường 3 Tháng 2, P. Xuân Khánh, Quận Ninh Kiều, Cần Thơ',
   },
   {
     id: '5',
@@ -240,10 +244,12 @@ export const restaurants: Restaurant[] = [
       value: 'Code 10% off',
     },
     outlets: 1,
+    address: '15C Mậu Thân, P. Xuân Khánh, Quận Ninh Kiều, Cần Thơ',
   },
 ];
 
 export const defaultLocation: string = '384/B1 Đ. Trần Nam Phú, Phường An Khánh, Ninh Kiều, Cần Thơ';
+
 export const savedAddresses: UserLocation[] = [
   {
     id: '1',
@@ -275,7 +281,7 @@ export const vouchers: Voucher[] = [
   {
     id: '1',
     code: 'WELCOME15',
-    title: 'Code 15% off',
+    title: 'Code 15% off, cap 10.000đ min order 45.000đ',
     description: 'Get 15% off on your order',
     discountType: 'PERCENT',
     discountValue: 15,
@@ -293,7 +299,7 @@ export const vouchers: Voucher[] = [
   {
     id: '2',
     code: 'FREESHIP50',
-    title: 'Code 50% off on shipping fee',
+    title: 'Code 50% off on shipping fee, cap 20.000đ',
     description: 'Get 50% off on shipping fee',
     discountType: 'SHIPPING',
     discountValue: 50,
@@ -309,7 +315,7 @@ export const vouchers: Voucher[] = [
   {
     id: '3',
     code: 'FREESHIP60',
-    title: 'Code 50% off on shipping fee',
+    title: 'Code 50% off on shipping fee, min order 60.000đ',
     description: 'Get 50% off on shipping fee',
     discountType: 'SHIPPING',
     discountValue: 50,
@@ -394,5 +400,96 @@ export const tipOptions: TipOption[] = [
     id: 'other',
     value: 0,
     label: 'Other'
+  }
+];
+
+export const orders: Order[] = [
+  {
+    id: '09094-767258805',
+    user: {
+      id: 'hungthinhh2003',
+      name: 'hungthinhh2003',
+      phoneNumber: '0944034769',
+      createdAt: new Date('2023-01-15'),
+      isGroupLeader: true
+    },
+    restaurant: {
+      id: '4',
+      name: 'Trà Sữa DUFANG - Đường 3 Tháng 2',
+      image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bWlsayUyMHRlYXxlbnwwfHwwfHx8MA%3D%3D',
+      address: '160B Đường 3 Tháng 2, P. Xuân Khánh, Quận Ninh Kiều, Cần Thơ'
+    },
+    items: [
+      {
+        id: '1',
+        name: 'Hồng trà đen',
+        price: 1000,
+        originalPrice: 20000,
+        quantity: 1,
+        image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bWlsayUyMHRlYXxlbnwwfHwwfHx8MA%3D%3D',
+        isFlashSale: true
+      }
+    ],
+    deliveryAddress: {
+      address: '384/B1 Đ. Trần Nam Phú, Phường An Khánh, Ninh Kiều, Cần Thơ 900000, Việt Nam',
+      contactName: 'Nguyễn Hùng Thịnh',
+      contactPhone: '0944034769'
+    },
+    deliveryDistance: 1.8,
+    deliveryFee: 15000,
+    platformFee: 6000,
+    subtotal: 1000,
+    discount: 15000,
+    total: 7000,
+    status: 'COMPLETED',
+    paymentMethod: 'ShopeePay',
+    paymentStatus: 'PAID',
+    orderTime: '21:18 09/09/2024',
+    includeCutlery: true,
+    canRate: true,
+    isRated: false
+  },
+  {
+    id: '04044-750574520',
+    user: {
+      id: 'hungthinhh2003',
+      name: 'hungthinhh2003',
+      phoneNumber: '0944034769',
+      createdAt: new Date('2023-01-15'),
+      isGroupLeader: true
+    },
+    restaurant: {
+      id: '1',
+      name: 'Ăn Vặt Nhà Thu - Chân Gà Sốt Thái, Cá Viên Chiên',
+      image: 'https://images.unsplash.com/photo-1600628421055-4d30de868b8f?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8c3RyZWV0JTIwZm9vZHxlbnwwfHwwfHx8MA%3D%3D',
+      address: '123 Đường 30/4, P. Hưng Lợi, Quận Ninh Kiều, Cần Thơ'
+    },
+    items: [
+      {
+        id: '1',
+        name: 'Trà Chanh Giải Tay Truyền Thống',
+        price: 9000,
+        quantity: 1,
+        image: 'https://images.unsplash.com/photo-1499638673689-79a0b5115d87?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bGVtb24lMjB0ZWF8ZW58MHx8MHx8fDA%3D'
+      }
+    ],
+    deliveryAddress: {
+      address: '384/B1 Đ. Trần Nam Phú, Phường An Khánh, Ninh Kiều, Cần Thơ 900000, Việt Nam',
+      contactName: 'Nguyễn Hùng Thịnh',
+      contactPhone: '0944034769'
+    },
+    deliveryDistance: 2.5,
+    deliveryFee: 18000,
+    platformFee: 3000,
+    subtotal: 9000,
+    discount: 0,
+    total: 30000,
+    status: 'COMPLETED',
+    paymentMethod: 'Cash',
+    paymentStatus: 'PAID',
+    orderTime: '19:45 04/04/2024',
+    includeCutlery: false,
+    canRate: true,
+    isRated: true
   }
 ];

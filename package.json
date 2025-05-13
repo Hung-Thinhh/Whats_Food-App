@@ -5,7 +5,9 @@
   "scripts": {
     "start": "expo start --tunnel",
     "start-web": "expo start --web --tunnel",
-    "start-web-dev": "DEBUG=expo* expo start --web --tunnel"
+    "start-web-dev": "DEBUG=expo* expo start --web --tunnel",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
@@ -40,7 +42,9 @@
     "react-native-svg": "15.8.0",
     "react-native-web": "~0.19.13",
     "zod": "^3.24.3",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "expo-dev-client": "~5.0.20",
+    "react-native-webview": "13.12.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
