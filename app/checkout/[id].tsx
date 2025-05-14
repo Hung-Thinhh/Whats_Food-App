@@ -211,7 +211,7 @@ export default function CheckoutScreen() {
           body: JSON.stringify({
             amount: totalLast / 100,
             orderId: currentOrderId,
-            returnUrl: "https://3db2-2001-ee0-5367-99e0-ddc9-187c-7f45-7d6a.ngrok-free.app/api/payment-return", // Thay bằng URL ngrok
+            returnUrl: "http://10.0.2.2:8000/api/payment-return", // Thay bằng URL ngrok
             orderData,
             createDate: currentCreateDate,
           }),
