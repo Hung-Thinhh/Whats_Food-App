@@ -6,5 +6,9 @@ const foodApiRequest = {
       http.get<any>(
         `/api/get-food/${id}`,
       ),
+      getRating: (id:string) =>
+        http.get<any>(
+          `/api/get-cmt/${id}`,
+        ),
   };
   export default foodApiRequest;

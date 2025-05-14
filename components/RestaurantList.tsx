@@ -81,7 +81,7 @@ export default function RestaurantList({
             />
           ))
         ) : (
-          <Text style={styles.emptyText}>No restaurants available</Text>
+          <Text style={styles.emptyText}>Không có nhà hàng nào</Text>
         )}
       </View>
     </View>

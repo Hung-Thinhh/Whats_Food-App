@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -19,16 +19,38 @@ import {
   ShoppingBag 
 } from 'lucide-react-native';
 import colors from '@/constants/colors';
-import { useAppStore } from '@/store/useAppStore';
+import { getAccessToken } from '@/storange/auth.storage';
+import orderApiRequest from '@/api/order.api';
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { getOrderById } = useAppStore();
-  
-  const order = getOrderById(id as string);
-  
-  if (!order) {
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const token = await getAccessToken();
+        const { payload } = await orderApiRequest.getOneOrder(token, id);
+        if (payload.EC === "0") {
+          setOrder(payload.DT);
+          console.log('myorder', JSON.stringify(payload.DT, null, 2));
+        } else {
+          setError('Không tìm thấy đơn hàng');
+        }
+      } catch (err) {
+        setError('Lỗi khi tải đơn hàng: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, [id]);
+
+  if (loading) {
     return (
       <View style={styles.container}>
         <Stack.Screen 
@@ -43,12 +65,55 @@ export default function OrderDetailScreen() {
           }}
         />
         <View style={styles.centerContainer}>
-          <Text style={styles.notFoundText}>Order not found</Text>
+          <Text style={styles.notFoundText}>Đang tải...</Text>
         </View>
       </View>
     );
   }
-  
+
+  if (error || !order) {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen 
+          options={{
+            headerShown: true,
+            headerTitle: "Chi tiết đơn hàng",
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()}>
+                <ArrowLeft size={24} color={colors.text} />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <View style={styles.centerContainer}>
+          <Text style={styles.notFoundText}>{error || 'Không tìm thấy đơn hàng'}</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Hàm định dạng ngày giờ
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Ánh xạ trạng thái đơn hàng
+  const statusTranslations = {
+    goingToRestaurant: 'Đang đến nhà hàng',
+    arrivedAtRestaurant: 'Đã đến nhà hàng',
+    pickedUp: 'Đã lấy hàng',
+    delivering: 'Đang giao hàng',
+    arrivedAtCustomer: 'Đã đến nơi khách hàng',
+    delivered: 'Đã giao hàng',
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen 
@@ -70,7 +135,9 @@ export default function OrderDetailScreen() {
       
       <ScrollView style={styles.scrollView}>
         <View style={styles.statusContainer}>
-          <Text style={styles.statusTitle}>Hoàn thành</Text>
+          <Text style={styles.statusTitle}>
+            {statusTranslations[order.orderStatus.toLowerCase()] || 'Không xác định'}
+          </Text>
           <Text style={styles.statusDescription}>
             Nếu cần hỗ trợ thêm, bạn vui lòng truy cập Trung tâm Trợ giúp nhé.
           </Text>
@@ -90,19 +157,16 @@ export default function OrderDetailScreen() {
                   <ShoppingBag size={12} color="#fff" />
                 </View>
               </View>
-              
               <View style={styles.progressStep}>
                 <View style={[styles.progressDot, styles.activeDot]}>
                   <ShoppingBag size={12} color="#fff" />
                 </View>
               </View>
-              
               <View style={styles.progressStep}>
                 <View style={[styles.progressDot, styles.activeDot]}>
                   <ShoppingBag size={12} color="#fff" />
                 </View>
               </View>
-              
               <View style={styles.progressStep}>
                 <View style={[styles.progressDot, styles.activeDot]}>
                   <ShoppingBag size={12} color="#fff" />
@@ -118,7 +182,7 @@ export default function OrderDetailScreen() {
             <Text style={styles.locationLabel}>Từ</Text>
             <TouchableOpacity style={styles.locationContent}>
               <Text style={styles.locationTitle}>{order.restaurant.name}</Text>
-              <Text style={styles.locationAddress}>{order.restaurant.address}</Text>
+              <Text style={styles.locationAddress}>{order.restaurant.address.fullAddress}</Text>
             </TouchableOpacity>
           </View>
           
@@ -126,9 +190,9 @@ export default function OrderDetailScreen() {
             <View style={[styles.locationDot, { backgroundColor: colors.success }]} />
             <Text style={styles.locationLabel}>Đến</Text>
             <View style={styles.locationContent}>
-              <Text style={styles.locationTitle}>{order.deliveryAddress.address}</Text>
+              <Text style={styles.locationTitle}>{order.address.address}</Text>
               <Text style={styles.locationSubtitle}>
-                {order.deliveryAddress.contactName} - {order.deliveryAddress.contactPhone}
+                {order.address.name} - {order.address.phoneNumber}
               </Text>
             </View>
           </View>
@@ -139,35 +203,29 @@ export default function OrderDetailScreen() {
           
           <View style={styles.userInfo}>
             <User size={16} color={colors.lightText} />
-            <Text style={styles.userName}>{order.user.name}</Text>
-            {order.user.isGroupLeader && (
-              <View style={styles.leaderBadge}>
-                <Text style={styles.leaderText}>Trưởng nhóm</Text>
-              </View>
-            )}
+            <Text style={styles.userName}>{order.user.username}</Text>
+            {/* Không có isGroupLeader trong dữ liệu API, nên bỏ phần này */}
           </View>
           
           {order.items.map((item, index) => (
             <View key={index} style={styles.orderItem}>
-              <Image source={{ uri: item.image }} style={styles.itemImage} />
+              <Image source={{ uri: item.food.image }} style={styles.itemImage} />
               <View style={styles.itemDetails}>
                 <View style={styles.itemHeader}>
-                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemName}>{item.food.name}</Text>
                   <View style={styles.priceContainer}>
                     <Text style={styles.currentPrice}>{item.price.toLocaleString()}đ</Text>
-                    {item.originalPrice && (
-                      <Text style={styles.originalPrice}>{item.originalPrice.toLocaleString()}đ</Text>
-                    )}
+                    {/* Không có originalPrice trong dữ liệu API */}
                   </View>
                 </View>
                 
-                {item.isFlashSale && (
-                  <View style={styles.flashSaleTag}>
-                    <Text style={styles.flashSaleText}>FLASH SALE!</Text>
-                  </View>
-                )}
-                
+                {/* Không có isFlashSale trong dữ liệu API */}
                 <Text style={styles.itemQuantity}>x {item.quantity}</Text>
+                {item.toppings.length > 0 && (
+                  <Text style={styles.toppingText}>
+                    Toppings: {item.toppings.map(t => t.item.map(i => i.price).join(', ')).join(', ')}đ
+                  </Text>
+                )}
               </View>
             </View>
           ))}
@@ -175,14 +233,15 @@ export default function OrderDetailScreen() {
           <View style={styles.summaryContainer}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Tổng giá món ({order.items.reduce((sum, item) => sum + item.quantity, 0)} món)</Text>
-              <Text style={styles.summaryValue}>{order.subtotal.toLocaleString()}đ</Text>
+              <Text style={styles.summaryValue}>{order.totalPrice.toLocaleString()}đ</Text>
             </View>
             
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Phí giao hàng ({order.deliveryDistance} km)</Text>
-              <Text style={styles.summaryValue}>{order.deliveryFee.toLocaleString()}đ</Text>
+              <Text style={styles.summaryLabel}>Phí giao hàng</Text>
+              <Text style={styles.summaryValue}>{order.shippingFee.toLocaleString()}đ</Text>
             </View>
             
+            {/* Không có platformFee trong dữ liệu API, bỏ phần này hoặc hiển thị 0 */}
             <View style={styles.summaryRow}>
               <View style={styles.summaryLabelWithInfo}>
                 <Text style={styles.summaryLabel}>Phí áp dụng</Text>
@@ -190,13 +249,13 @@ export default function OrderDetailScreen() {
                   <Info size={14} color={colors.lightText} />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.summaryValue}>{order.platformFee.toLocaleString()}đ</Text>
+              <Text style={styles.summaryValue}>0đ</Text>
             </View>
             
-            {order.discount > 0 && (
+            {order.discount?.amount > 0 && (
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Giảm giá</Text>
-                <Text style={[styles.summaryValue, styles.discountValue]}>-{order.discount.toLocaleString()}đ</Text>
+                <Text style={[styles.summaryValue, styles.discountValue]}>-{order.discount.amount.toLocaleString()}đ</Text>
               </View>
             )}
             
@@ -209,14 +268,15 @@ export default function OrderDetailScreen() {
                   style={styles.totalStamp}
                 />
               </View>
-              <Text style={styles.totalValue}>{order.total.toLocaleString()}đ</Text>
+              <Text style={styles.totalValue}>{order.finalAmount.toLocaleString()}đ</Text>
             </View>
           </View>
           
           <View style={styles.additionalInfoContainer}>
+            {/* Không có includeCutlery trong dữ liệu API, bỏ phần này hoặc mặc định là "Không lấy" */}
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Dụng cụ ăn uống</Text>
-              <Text style={styles.infoValue}>{order.includeCutlery ? "Lấy dụng cụ ăn uống" : "Không lấy"}</Text>
+              <Text style={styles.infoValue}>Không lấy</Text>
             </View>
             
             <View style={styles.infoRow}>
@@ -227,7 +287,7 @@ export default function OrderDetailScreen() {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Mã đơn hàng</Text>
               <View style={styles.orderIdContainer}>
-                <Text style={styles.infoValue}>{order.id}</Text>
+                <Text style={styles.infoValue}>{order._id}</Text>
                 <TouchableOpacity style={styles.copyButton}>
                   <Text style={styles.copyText}>Sao chép</Text>
                 </TouchableOpacity>
@@ -236,23 +296,27 @@ export default function OrderDetailScreen() {
             
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Thời gian đặt hàng</Text>
-              <Text style={styles.infoValue}>{order.orderTime}</Text>
+              <Text style={styles.infoValue}>{formatDateTime(order.createdAt)}</Text>
             </View>
             
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Thanh toán</Text>
-              <Text style={styles.infoValue}>{order.paymentMethod}</Text>
+              <Text style={styles.infoValue}>{order.paymentMethod === 'cash' ? 'Thanh toán khi nhận hàng' : order.paymentMethod}</Text>
             </View>
           </View>
         </View>
       </ScrollView>
       
       <View style={styles.footer}>
-        {order.canRate ? (
+        {order.isRated ? (
           <TouchableOpacity style={styles.rateButton}>
             <Text style={styles.rateButtonText}>Đã đánh giá</Text>
           </TouchableOpacity>
-        ) : null}
+        ) : (
+          <TouchableOpacity style={styles.rateButton}>
+            <Text style={styles.rateButtonText}>Đánh giá</Text>
+          </TouchableOpacity>
+        )}
         
         <TouchableOpacity 
           style={styles.reorderButton}
@@ -459,6 +523,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.lightText,
     textDecorationLine: 'line-through',
+  },
+  toppingText: {
+    fontSize: 12,
+    color: colors.lightText,
+    marginTop: 4,
   },
   flashSaleTag: {
     backgroundColor: colors.warning,

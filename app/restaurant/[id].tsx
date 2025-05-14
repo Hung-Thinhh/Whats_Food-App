@@ -32,6 +32,8 @@ import CartModal from "@/components/CartModal"; // Import component mới
 
 export default function RestaurantScreen() {
   const { id } = useLocalSearchParams();
+  console.log('aaaaaaaaaaaaaaaaaaa',id);
+
   const router = useRouter();
   const {
     favorites,
@@ -64,6 +66,8 @@ export default function RestaurantScreen() {
   // Get cart info
   const cartItemOfRes = getCartItemCount(id);
   const cartRestaurantId = getRestaurantFromCart();
+  console.log("cartRestaurantId", cartRestaurantId);
+  
 
   const [restaurant, setRestaurant] = useState<RestaurantData>();
   const [menu, setMenu] = useState<any>();
@@ -243,7 +247,7 @@ export default function RestaurantScreen() {
   const handleAddToCart = () => {
     if (!selectedItem) return;
 
-    if (cartRestaurantId && cartRestaurantId !== restaurant._id) {
+    if (cartRestaurantId && cartRestaurantId == 'id') {
       Alert.alert(
         "Replace Cart Items?",
         "Your cart contains items from another restaurant. Would you like to clear your cart and add this item?",

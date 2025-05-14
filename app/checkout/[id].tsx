@@ -42,6 +42,8 @@ import WebView from "react-native-webview";
 
 export default function CheckoutScreen() {
   const { id } = useLocalSearchParams();
+  console.log('aaaaaaaaaaaaaaaaaaa',id);
+  
   const router = useRouter();
   const scrollViewRef = useRef(null);
 
@@ -167,7 +169,7 @@ export default function CheckoutScreen() {
 
     const orderData = {
       user: user.id,
-      restaurantId: id,
+      restaurant: id,
       items: orderItems,
       totalPrice: totalLast,
       shippingFee: shipping?.fee || 0,
@@ -265,7 +267,7 @@ export default function CheckoutScreen() {
       try {
         const token = await getAccessToken();
         const response = await fetch(
-          "https://3db2-2001-ee0-5367-99e0-ddc9-187c-7f45-7d6a.ngrok-free.app/api/check-payment-status", // Thay bằng URL ngrok
+          "http://10.0.2.2:8000/api/check-payment-status", // Thay bằng URL ngrok
           {
             method: "POST",
             headers: {

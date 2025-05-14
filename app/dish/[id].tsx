@@ -31,6 +31,7 @@ export default function DishDetailScreen() {
   const { addToCart, cart, getCartItemCount, updateCartItemQuantity, removeFromCart } = useAppStore();
 
   const [dish, setDish] = useState<any>(null);
+  const [rating, setRating] = useState<any[]>([]); // Đảm bảo rating là mảng
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -51,6 +52,14 @@ export default function DishDetailScreen() {
           setDish(dishData);
         } else {
           console.warn("No dish data found");
+        }
+        const ratingResponse = await foodApiRequest.getRating(id);
+        if (ratingResponse.payload.EC === "0" && ratingResponse.payload.DT) {
+          const ratingData = ratingResponse.payload.DT;
+          console.log("Rating data:", ratingData);
+          setRating(ratingData); // Lưu dữ liệu rating dạng mảng
+        } else {
+          console.warn("No rating data found");
         }
       } catch (error) {
         console.error("Error fetching dish:", error);
@@ -85,10 +94,7 @@ export default function DishDetailScreen() {
 
   const handleAddToCart = () => {
     if (!selectedItem) return;
-
-   
-      addItemToCart();
-    
+    addItemToCart();
   };
 
   const addItemToCart = () => {
@@ -155,10 +161,13 @@ export default function DishDetailScreen() {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()} ${date.getHours()}:${date
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`;
+    return date.toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const renderAvailability = () => {
@@ -272,7 +281,7 @@ export default function DishDetailScreen() {
     if (selectedItem.options) {
       selectedItem.options.forEach((option) => {
         if (option.multiple) {
-         const selectedChoices =
+          const selectedChoices =
             (selectedOptions[option.id] as string[]) || [];
           console.log(`Option ${option.id} - Selected Choices:`, selectedChoices);
           selectedChoices.forEach((choiceId) => {
@@ -317,6 +326,31 @@ export default function DishDetailScreen() {
 
   const openCartModal = () => {
     setCartModalVisible(true);
+  };
+
+  // Hàm render danh sách bình luận
+  const renderReviews = () => {
+    if (!rating || rating.length === 0) {
+      return (
+        <Text style={styles.noReviewsText}>
+          Chưa có bình luận cho món ăn này
+        </Text>
+      );
+    }
+
+    return rating.map((review) => (
+      <View key={review._id} style={styles.reviewItem}>
+        <View style={styles.reviewHeader}>
+          <Text style={styles.reviewerName}>{review.user?.username || 'Ẩn danh'}</Text>
+          <View style={styles.ratingContainer}>
+            <Star size={16} color={"yellow"} fill={colors.primary} />
+            <Text style={styles.ratingText}>{review.rating}</Text>
+          </View>
+        </View>
+        <Text style={styles.reviewComment}>{review.comment}</Text>
+        <Text style={styles.reviewDate}>{formatDate(review.createdAt)}</Text>
+      </View>
+    ));
   };
 
   return (
@@ -365,9 +399,7 @@ export default function DishDetailScreen() {
           <View style={styles.divider} />
 
           <Text style={styles.sectionTitle}>Bình luận</Text>
-          <Text style={styles.noReviewsText}>
-            Chưa có bình luận cho món ăn này
-          </Text>
+          {renderReviews()} {/* Gọi hàm render bình luận */}
         </View>
       </ScrollView>
 
@@ -532,6 +564,41 @@ const styles = StyleSheet.create({
     color: colors.lightText,
     textAlign: "center",
     marginBottom: 16,
+  },
+  reviewItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    marginBottom: 8,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  reviewerName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingText: {
+    fontSize: 14,
+    color: colors.text,
+    marginLeft: 4,
+  },
+  reviewComment: {
+    fontSize: 14,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  reviewDate: {
+    fontSize: 12,
+    color: colors.lightText,
   },
   cartContainer: {
     flexDirection: "row",

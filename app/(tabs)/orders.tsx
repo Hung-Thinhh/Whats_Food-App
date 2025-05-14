@@ -1,99 +1,163 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TouchableOpacity, 
-  ScrollView, 
-  Image, 
-  FlatList
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Stack } from 'expo-router';
-import { Search, ChevronRight, FileText, Utensils, ChevronDown, Filter } from 'lucide-react-native';
-import { restaurants } from '@/mocks/data';
-import colors from '@/constants/colors';
-import { useAppStore } from '@/store/useAppStore';
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  FlatList,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter, Stack } from "expo-router";
+import {
+  Search,
+  ChevronRight,
+  FileText,
+  Utensils,
+  ChevronDown,
+  Filter,
+} from "lucide-react-native";
+import { restaurants } from "@/mocks/data";
+import colors from "@/constants/colors";
+import { useAppStore } from "@/store/useAppStore";
+import { getAccessToken } from "@/storange/auth.storage";
+import orderApiRequest from "@/api/order.api";
 
-type OrderTab = 'Ongoing' | 'History' | 'To Rate' | 'Cart';
-
+type OrderTab = "Ongoing" | "History" | "To Rate" | "Cart";
+const statusTranslations = {
+  pending: "Đang kiếm shipper",
+  goingToRestaurant: "Shipper đang đến nhà hàng",
+  arrivedAtRestaurant: "Shipper đã đến nhà hàng",
+  pickedUp: "Đã lấy hàng",
+  delivering: "Đang giao hàng",
+  arrivedAtCustomer: "Đã đến nơi khách hàng",
+  delivered: "Đã giao hàng",
+};
 export default function OrdersScreen() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<OrderTab>('Ongoing');
+  const [activeTab, setActiveTab] = useState<OrderTab>("Ongoing");
   const { getOrders } = useAppStore();
+
+  const [myorder, setMyOrder] = useState();
+  const [cart, setCart] = useState();
+  const [historyOrder, setHistoryOrder] = useState();
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const token = await getAccessToken();
+      const { payload } = await orderApiRequest.get(token);
+      if (payload.EC === "0") {
+        setMyOrder(payload.DT);
+        console.log('myorder',JSON.stringify(payload.DT,null,2));
+      }
+      const history = await orderApiRequest.getHis(token);
+      if (history.payload.EC === "0") {
+        setHistoryOrder(history.payload.DT);
+        console.log('hisssssss',JSON.stringify(history.payload.DT,null,2));
+      }
+      const fetchCart = await orderApiRequest.getCart(token);
+      console.log("fetchCartyyyyyyyy", fetchCart.payload);
+      
+      if (fetchCart.payload.EC === "0") {
+        setCart(fetchCart.payload.DT);
+        console.log(
+          "cart tttttttttttttttttttttttttttttttttttttt",
+          JSON.stringify(fetchCart.payload.DT, null, 2)
+        );
+      }
+    };
+    fetchOrders();
+  }, []);
   const orders = getOrders();
-  
   const handleTabPress = (tab: OrderTab) => {
     setActiveTab(tab);
   };
-
   const renderEmptyOngoing = () => (
-    <View style={styles.emptyContainer}>
-      <Image 
-        source={{ uri: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fG5vdGVwYWR8ZW58MHx8MHx8fDA%3D' }} 
-        style={[styles.emptyIcon, { tintColor: '#FF6E40' }]}
-      />
-      <Text style={styles.emptyTitle}>Have you ordered?</Text>
-      <Text style={styles.emptyText}>
-        Confirmed items which are currently being prepared and delivered will show up here so you can track your delivery!
-      </Text>
-      
-      <View style={styles.recommendedSection}>
-        <Text style={styles.recommendedTitle}>You May Also Like</Text>
-        
-        {restaurants.slice(0, 3).map((restaurant) => (
-          <TouchableOpacity 
-            key={restaurant.id}
-            style={styles.recommendedItem}
-            onPress={() => router.push(`/restaurant/${restaurant.id}`)}
+    <View style={styles.historyContainer}>
+      {myorder &&
+        myorder.map((order: any) => (
+          <TouchableOpacity
+            key={order._id}
+            style={styles.orderItem}
+            onPress={() => router.push(`/order_detail/${order._id}`)}
           >
-            <Image source={{ uri: restaurant.image }} style={styles.recommendedImage} />
-            <View style={styles.recommendedInfo}>
-              <Text style={styles.recommendedName}>
-                {restaurant.emoji} {restaurant.name}
-              </Text>
-              <View style={styles.recommendedStats}>
-                <Text style={styles.recommendedRating}>★ {restaurant.rating}</Text>
-                <Text style={styles.recommendedDot}>•</Text>
-                <Text style={styles.recommendedDistance}>{restaurant.distance}km</Text>
-                <Text style={styles.recommendedDot}>•</Text>
-                <Text style={styles.recommendedTime}>{restaurant.deliveryTime}min</Text>
-              </View>
-              
-              {restaurant.discount && (
-                <View style={styles.discountContainer}>
-                  {restaurant.discount.menuValue && (
-                    <View style={styles.menuDiscountTag}>
-                      <Text style={styles.discountTagText}>
-                        {restaurant.discount.menuValue}
-                      </Text>
-                    </View>
-                  )}
-                  <View style={styles.codeDiscountTag}>
-                    <Text style={styles.discountTagText}>
-                      {restaurant.discount.value}
+            <View style={styles.orderHeader}>
+              <Text style={styles.orderId}>Đồ ăn #{order._id}</Text>
+              {/* <Text style={styles.orderDate}>{order.orderTime.split(' ')[0]}</Text> */}
+            </View>
+
+            <View style={styles.orderContent}>
+              <View style={styles.restaurantRow}>
+                <Image
+                  source={{
+                    uri:
+                      order.restaurant && order.restaurant.avt
+                        ? order.restaurant.avt
+                        : "h",
+                  }}
+                  style={styles.restaurantImage}
+                />
+                <View style={styles.restaurantInfo}>
+                  <Text style={styles.restaurantName}>
+                    {order.restaurant.name}
+                  </Text>
+                  {order.items.map((item, index) => (
+                    <Text key={index} style={styles.orderItemName}>
+                      {item.food.name}
                     </Text>
-                  </View>
+                  ))}
                 </View>
-              )}
-              
-              {restaurant.isClosed && (
-                <Text style={styles.closingText}>
-                  Closing soon Closing at {restaurant.closingTime}
+                <View style={styles.priceContainer}>
+                  <Text style={styles.orderPrice}>
+                    {order.totalPrice.toLocaleString()}đ
+                  </Text>
+                  <Text style={styles.itemCount}>
+                    {order.items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
+                    món
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.orderStatus}>
+                <Text style={styles.statusText}>
+                  {statusTranslations[order.orderStatus.toLowerCase()] ||
+                    "Không xác định"}
                 </Text>
-              )}
+
+                <View style={styles.orderActions}>
+                  {order.isRated ? (
+                    <TouchableOpacity style={styles.ratedButton} >
+                      <Text style={styles.ratedButtonText}>Đã đánh giá</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity style={styles.rateButton} onPress={() => router.push(`/rate/${order._id}`)}>
+                      <Text style={styles.rateButtonText}>Đánh giá</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  <TouchableOpacity
+                    style={styles.reorderButton}
+                    onPress={() => {
+                      // Handle reorder logic
+                    }}
+                  >
+                    <Text style={styles.reorderButtonText}>Đặt lại</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           </TouchableOpacity>
         ))}
-      </View>
     </View>
   );
 
   const renderEmptyDeals = () => (
     <View style={styles.emptyContainer}>
-      <Image 
-        source={{ uri: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZGlzaHxlbnwwfHwwfHx8MA%3D' }} 
-        style={[styles.emptyIcon, { tintColor: '#FF6E40' }]}
+      <Image
+        source={{
+          uri: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZGlzaHxlbnwwfHwwfHx8MA%3D",
+        }}
+        style={[styles.emptyIcon, { tintColor: "#FF6E40" }]}
       />
       <Text style={styles.emptyTitle}>No Orders Yet</Text>
       <Text style={styles.emptyText}>
@@ -103,89 +167,96 @@ export default function OrdersScreen() {
   );
 
   const renderHistory = () => (
-    <View style={styles.historyContainer}>
-      {/* <View style={styles.historyHeader}>
-        <View style={styles.filterRow}>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterText}>Dịch vụ</Text>
-            <ChevronDown size={16} color={colors.lightText} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterText}>Trạng thái</Text>
-            <ChevronDown size={16} color={colors.lightText} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={[styles.filterText, styles.dateFilterText]}>01/04/24 - 26/09/24</Text>
-            <ChevronDown size={16} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
-      </View> */}
-      
-      {orders.map((order) => (
-        <TouchableOpacity 
-          key={order.id}
-          style={styles.orderItem}
-          onPress={() => router.push(`/order_detail/${order.id}`)}
-        >
-          <View style={styles.orderHeader}>
-            <Text style={styles.orderId}>Đồ ăn #{order.id}</Text>
-            <Text style={styles.orderDate}>{order.orderTime.split(' ')[0]}</Text>
-          </View>
-          
-          <View style={styles.orderContent}>
-            <View style={styles.restaurantRow}>
-              <Image source={{ uri: order.restaurant.image }} style={styles.restaurantImage} />
-              <View style={styles.restaurantInfo}>
-                <Text style={styles.restaurantName}>{order.restaurant.name}</Text>
-                {order.items.map((item, index) => (
-                  <Text key={index} style={styles.orderItemName}>
-                    {item.name}
+    <View>
+      <View style={styles.historyContainer}>
+        {historyOrder &&
+          historyOrder.map((order: any) => (
+            <TouchableOpacity
+              key={order._id}
+              style={styles.orderItem}
+              onPress={() => router.push(`/order_detail/${order._id}`)}
+            >
+              <View style={styles.orderHeader}>
+                <Text style={styles.orderId}>Đồ ăn #{order._id}</Text>
+                {/* <Text style={styles.orderDate}>{order.orderTime.split(' ')[0]}</Text> */}
+              </View>
+
+              <View style={styles.orderContent}>
+                <View style={styles.restaurantRow}>
+                  <Image
+                    source={{
+                      uri:
+                        order.restaurant && order.restaurant.avt
+                          ? order.restaurant.avt
+                          : "h",
+                    }}
+                    style={styles.restaurantImage}
+                  />
+                  <View style={styles.restaurantInfo}>
+                    <Text style={styles.restaurantName}>
+                      {order.restaurant.name}
+                    </Text>
+                    {order.items.map((item, index) => (
+                      <Text key={index} style={styles.orderItemName}>
+                        {item.food.name}
+                      </Text>
+                    ))}
+                  </View>
+                  <View style={styles.priceContainer}>
+                    <Text style={styles.orderPrice}>
+                      {order.totalPrice.toLocaleString()}đ
+                    </Text>
+                    <Text style={styles.itemCount}>
+                      {order.items.reduce(
+                        (sum, item) => sum + item.quantity,
+                        0
+                      )}{" "}
+                      món
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.orderStatus}>
+                  <Text style={styles.statusText}>
+                    {statusTranslations[order.orderStatus.toLowerCase()] ||
+                      "Không xác định"}
                   </Text>
-                ))}
+
+                  <View style={styles.orderActions}>
+                    {order.isRated ? (
+                      <TouchableOpacity style={styles.ratedButton}>
+                        <Text style={styles.ratedButtonText}>Đã đánh giá</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity style={styles.rateButton}>
+                        <Text style={styles.rateButtonText}>Đánh giá</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity
+                      style={styles.reorderButton}
+                      onPress={() => {
+                        // Handle reorder logic
+                      }}
+                    >
+                      <Text style={styles.reorderButtonText}>Đặt lại</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-              <View style={styles.priceContainer}>
-                <Text style={styles.orderPrice}>{order.total.toLocaleString()}đ</Text>
-                <Text style={styles.itemCount}>{order.items.reduce((sum, item) => sum + item.quantity, 0)} món</Text>
-              </View>
-            </View>
-            
-            <View style={styles.orderStatus}>
-              <Text style={styles.statusText}>Hoàn thành</Text>
-              
-              <View style={styles.orderActions}>
-                {order.isRated ? (
-                  <TouchableOpacity style={styles.ratedButton}>
-                    <Text style={styles.ratedButtonText}>Đã đánh giá</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity style={styles.rateButton}>
-                    <Text style={styles.rateButtonText}>Đánh giá</Text>
-                  </TouchableOpacity>
-                )}
-                
-                <TouchableOpacity 
-                  style={styles.reorderButton}
-                  onPress={() => {
-                    // Handle reorder logic
-                  }}
-                >
-                  <Text style={styles.reorderButtonText}>Đặt lại</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      ))}
+            </TouchableOpacity>
+          ))}
+      </View>
     </View>
   );
 
   const renderEmptyToRate = () => (
     <View style={styles.emptyContainer}>
-      <Image 
-        source={{ uri: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZGlzaHxlbnwwfHwwfHx8MA%3D' }} 
-        style={[styles.emptyIcon, { tintColor: '#FF6E40' }]}
+      <Image
+        source={{
+          uri: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZGlzaHxlbnwwfHwwfHx8MA%3D",
+        }}
+        style={[styles.emptyIcon, { tintColor: "#FF6E40" }]}
       />
       <Text style={styles.emptyTitle}>No order to rate</Text>
       <Text style={styles.emptyText}>
@@ -199,38 +270,46 @@ export default function OrdersScreen() {
       <View style={styles.filterRow}>
         <TouchableOpacity style={styles.filterButton}>
           <Text style={styles.filterText}>All Services</Text>
-          <ChevronRight size={16} color={colors.lightText} style={{ transform: [{ rotate: '90deg' }] }} />
+          <ChevronRight
+            size={16}
+            color={colors.lightText}
+            style={{ transform: [{ rotate: "90deg" }] }}
+          />
         </TouchableOpacity>
-        
+
         <TouchableOpacity>
           <Text style={styles.clearText}>Clear All</Text>
         </TouchableOpacity>
       </View>
-      
+
       <View style={styles.cartItemsContainer}>
         <Text style={styles.categoryLabel}>Food</Text>
-        
-        {restaurants.slice(0, 2).map((restaurant) => (
-          <TouchableOpacity 
-            key={restaurant.id}
+
+        {cart&&cart.map((restaurant) => (
+          <TouchableOpacity
+            key={restaurant.restaurantId._id}
             style={styles.cartItem}
-            onPress={() => router.push(`/restaurant/${restaurant.id}`)}
+            onPress={() =>
+              router.push(`/restaurant/${restaurant.restaurantId._id}`)
+            }
           >
             <View style={styles.cartItemPreferredBadge}>
               <Text style={styles.cartItemPreferredText}>Preferred</Text>
             </View>
-            <Image source={{ uri: restaurant.image }} style={styles.cartItemImage} />
+            <Image
+              source={{ uri: restaurant.restaurantId.avt }}
+              style={styles.cartItemImage}
+            />
             <View style={styles.cartItemInfo}>
               <Text style={styles.cartItemName}>
-                {restaurant.emoji} {restaurant.name}
+                {restaurant.restaurantId.name}
               </Text>
               <Text style={styles.cartItemAddress} numberOfLines={1}>
-                {restaurant.id === '1' ? 
-                  '192D đường 30/4, P. An Phú, Quận Ninh Kiều, Cần...' : 
-                  'Số 401 Đường Nguyễn Văn Cừ, P. An Hòa, Quận N...'}
+                {restaurant.restaurantId.address.fullAddress}
               </Text>
               <Text style={styles.cartItemPrice}>
-                {restaurant.id === '1' ? '87.000đ (3 items)' : '306.000đ (2 items)'}
+                {restaurant.totalPrice.toLocaleString() + "đ"}
+                {`(${restaurant.items.length} món)`}
               </Text>
             </View>
           </TouchableOpacity>
@@ -241,13 +320,13 @@ export default function OrdersScreen() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Ongoing':
+      case "Ongoing":
         return renderEmptyOngoing();
-      case 'History':
+      case "History":
         return renderHistory();
-      case 'To Rate':
+      case "To Rate":
         return renderEmptyToRate();
-      case 'Cart':
+      case "Cart":
         return renderCart();
       default:
         return renderEmptyOngoing();
@@ -255,46 +334,48 @@ export default function OrdersScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Đơn hàng</Text>
         <TouchableOpacity>
           <Search size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
-      
+
       <View style={styles.tabsContainer}>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabsScrollContent}
         >
-          {(['Ongoing', 'History', 'To Rate', 'Cart'] as OrderTab[]).map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[
-                styles.tab,
-                activeTab === tab && styles.activeTab,
-              ]}
-              onPress={() => handleTabPress(tab)}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === tab && styles.activeTabText,
-                ]}
+          {(["Ongoing", "History", "To Rate", "Cart"] as OrderTab[]).map(
+            (tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.tab, activeTab === tab && styles.activeTab]}
+                onPress={() => handleTabPress(tab)}
               >
-                {tab === 'History' ? 'Lịch sử' : 
-                 tab === 'To Rate' ? 'Đánh giá' : 
-                 tab === 'Ongoing' ? 'Đang đến' :  
-                 'Đơn nhập'}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === tab && styles.activeTabText,
+                  ]}
+                >
+                  {tab === "History"
+                    ? "Lịch sử"
+                    : tab === "To Rate"
+                    ? "Đánh giá"
+                    : tab === "Ongoing"
+                    ? "Đang đến"
+                    : "Đơn nhập"}
+                </Text>
+              </TouchableOpacity>
+            )
+          )}
         </ScrollView>
       </View>
-      
-      {activeTab === 'History' && (
+
+      {activeTab === "History" && (
         <View style={styles.rewardBanner}>
           <View style={styles.coinIcon}>
             <Text style={styles.coinText}>$</Text>
@@ -303,8 +384,8 @@ export default function OrdersScreen() {
           <ChevronRight size={16} color={colors.text} />
         </View>
       )}
-      
-      {activeTab === 'To Rate' && (
+
+      {activeTab === "To Rate" && (
         <View style={styles.rewardBanner}>
           <View style={styles.coinIcon}>
             <Text style={styles.coinText}>$</Text>
@@ -313,10 +394,8 @@ export default function OrdersScreen() {
           <ChevronRight size={16} color={colors.text} />
         </View>
       )}
-      
-      <ScrollView style={styles.content}>
-        {renderContent()}
-      </ScrollView>
+
+      <ScrollView style={styles.content}>{renderContent()}</ScrollView>
     </SafeAreaView>
   );
 }
@@ -327,9 +406,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
@@ -337,7 +416,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
   },
   tabsContainer: {
@@ -350,7 +429,7 @@ const styles = StyleSheet.create({
   tab: {
     paddingVertical: 12,
     marginRight: 30,
-    position: 'relative',
+    position: "relative",
   },
   activeTab: {
     borderBottomWidth: 2,
@@ -362,13 +441,13 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: colors.primary,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   content: {
     flex: 1,
   },
   emptyContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 40,
     paddingHorizontal: 20,
   },
@@ -379,32 +458,32 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 14,
     color: colors.lightText,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 24,
   },
   recommendedSection: {
-    width: '100%',
+    width: "100%",
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
+    borderTopColor: "#EEEEEE",
   },
   recommendedTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   recommendedItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -421,13 +500,13 @@ const styles = StyleSheet.create({
   },
   recommendedName: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginBottom: 4,
   },
   recommendedStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
   },
   recommendedRating: {
@@ -448,7 +527,7 @@ const styles = StyleSheet.create({
     color: colors.lightText,
   },
   discountContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 4,
   },
   menuDiscountTag: {
@@ -466,7 +545,7 @@ const styles = StyleSheet.create({
   },
   discountTagText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.background,
   },
   closingText: {
@@ -475,9 +554,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   rewardBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF9E6',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF9E6",
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -486,14 +565,14 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#FFD700',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#FFD700",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 8,
   },
   coinText: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.background,
   },
   rewardText: {
@@ -505,16 +584,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   filterText: {
     fontSize: 14,
@@ -533,17 +612,17 @@ const styles = StyleSheet.create({
   },
   categoryLabel: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginBottom: 12,
   },
   cartItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 16,
-    position: 'relative',
+    position: "relative",
   },
   cartItemPreferredBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     backgroundColor: colors.primary,
@@ -553,7 +632,7 @@ const styles = StyleSheet.create({
   },
   cartItemPreferredText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.background,
   },
   cartItemImage: {
@@ -564,11 +643,11 @@ const styles = StyleSheet.create({
   },
   cartItemInfo: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   cartItemName: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginBottom: 4,
   },
@@ -579,7 +658,7 @@ const styles = StyleSheet.create({
   },
   cartItemPrice: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
   },
   historyContainer: {
@@ -595,8 +674,8 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   orderId: {
@@ -607,11 +686,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.lightText,
   },
-  orderContent: {
-    
-  },
+  orderContent: {},
   restaurantRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 12,
   },
   restaurantImage: {
@@ -622,11 +699,11 @@ const styles = StyleSheet.create({
   },
   restaurantInfo: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   restaurantName: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginBottom: 4,
   },
@@ -635,12 +712,12 @@ const styles = StyleSheet.create({
     color: colors.lightText,
   },
   priceContainer: {
-    justifyContent: 'center',
-    alignItems: 'flex-end',
+    justifyContent: "center",
+    alignItems: "flex-end",
   },
   orderPrice: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginBottom: 4,
   },
@@ -649,16 +726,16 @@ const styles = StyleSheet.create({
     color: colors.lightText,
   },
   orderStatus: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   statusText: {
     fontSize: 14,
     color: colors.text,
   },
   orderActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   rateButton: {
     paddingHorizontal: 12,
@@ -694,7 +771,7 @@ const styles = StyleSheet.create({
   },
   reorderButtonText: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.background,
   },
 });
